@@ -14,11 +14,11 @@ $ cd prisma2-firebase-authentication-hands-on
 Build docker image:
 
 ```
-$ ./bin/build
+$ ./bin/docker-build
 ```
 
 Run docker container:
 
 ```
-$ ./bin/run
+$ ./bin/docker-run
 ```
