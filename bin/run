@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+docker run --rm -it --name prisma-hands-on-docker \
+  -v $PWD:/app -p 8080:4000 \
+  prisma-hands-on-docker
