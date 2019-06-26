@@ -1,0 +1,21 @@
+version: '3'
+services:
+  db:
+    image: postgres:11.4
+    environment:
+      POSTGRES_PASSWORD: password
+      TZ: "Asia/Tokyo"
+    volumes:
+      - ./db:/docker-entrypoint-initdb.d
+      - postgresql-data:/var/lib/postgresql/data
+  node-dev:
+    build: .
+    ports:
+      - "8080:4000"
+      - "5555:5555"
+    depends_on:
+      - db
+    volumes:
+      - ./:/home/app
+volumes:
+  postgresql-data:
