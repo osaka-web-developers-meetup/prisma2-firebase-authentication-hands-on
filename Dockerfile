@@ -1,11 +1,11 @@
-FROM node:10.16-alpine
+FROM node:10.16
 
-RUN apk add --no-cache sqlite
-
-WORKDIR /app
+WORKDIR /home/app
 
 USER node
 
-EXPOSE 4000
+# 4000 - GraphQL Server
+# 5555 - Prisma2 Studio
+EXPOSE 4000 5555
 
-ENTRYPOINT /bin/sh
+ENTRYPOINT /bin/bash
