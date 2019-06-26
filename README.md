@@ -2,6 +2,7 @@
 
 ## Requirements
 - [Docker](https://docs.docker.com/install/)
+- [Docker Compose](https://docs.docker.com/compose/install/)
 
 ## Get started
 Clone the repository:
@@ -11,14 +12,14 @@ $ git clone https://github.com/shinosakarb/prisma2-firebase-authentication-hands
 $ cd prisma2-firebase-authentication-hands-on
 ```
 
-Build docker image:
+Compose up:
 
 ```
-$ ./bin/docker-build
+$ ./bin/compose-up
 ```
 
-Run docker container:
+Run node-dev container:
 
 ```
-$ ./bin/docker-run
+$ ./bin/compose-run
 ```
