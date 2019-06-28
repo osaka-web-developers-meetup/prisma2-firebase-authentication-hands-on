@@ -1,0 +1,25 @@
+datasource db {
+  provider = "postgres"
+  url      = "postgresql://postgres:password@db:5432/prisma_sample_development?schema=public"
+}
+
+generator photon {
+  provider = "photonjs"
+  output   = "node_modules/@generated/photon"
+}
+
+// model Migration {
+//   revision          Int       @id
+//   applied           Int
+//   databaseMigration String    @map("database_migration")
+//   datamodel         String
+//   datamodelSteps    String    @map("datamodel_steps")
+//   errors            String
+//   finishedAt        DateTime? @map("finished_at")
+//   name              String
+//   rolledBack        Int       @map("rolled_back")
+//   startedAt         DateTime  @map("started_at")
+//   status            String
+
+//   @@map("_Migration")
+// }
