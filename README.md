@@ -46,8 +46,45 @@ Prisma2 initialization:
 $ npx prisma2 init .
 ```
 
-Add phonton generator
-```project.prisma
+Add phonton generator:
+
+prisma/project.prisma
+```diff
+datasource db {
+  provider = "postgres"
+  url      = "postgresql://postgres:password@db:5432/prisma_sample_development?schema=public"
+}
+
++generator photonjs {
++  provider = 'photonjs'
++}
+
+-model Migration {
+-  revision          Int       @id
+-  applied           Int
+-  databaseMigration String    @map("database_migration")
+-  datamodel         String
+-  datamodelSteps    String    @map("datamodel_steps")
+-  errors            String
+-  finishedAt        DateTime? @map("finished_at")
+-  name              String
+-  rolledBack        Int       @map("rolled_back")
+-  startedAt         DateTime  @map("started_at")
+-  status            String
+-
+-  @@map("_Migration")
+-}
+```
+
+Start the Prisma development mode:
+```
+$ npx prisma2 dev
+```
+
+Add Community model:
+
+prisma/project.prisma
+```diff
 datasource db {
   provider = "postgres"
   url      = "postgresql://postgres:password@db:5432/prisma_sample_development?schema=public"
@@ -55,11 +92,23 @@ datasource db {
 
 generator photon {
   provider = "photonjs"
-  output   = "node_modules/@generated/photon"
 }
+
++model Community {
++  id          String    @default(cuid()) @id @unique
++  name        String    @unique
++  description String?
++  createdAt   DateTime  @default(now())
++  updatedAt   DateTime  @updatedAt
++}
 ```
 
-Run Prisma Studio
+Create migration file:
 ```
-$ npx prisma2 dev
+$ npx prisma2 lift save --name 'add community'
+```
+
+Run migrate:
+```
+$ npx prisma2 lift up
 ```
