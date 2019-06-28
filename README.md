@@ -506,9 +506,9 @@ export interface User {
 const admin = firebaseAdmin.initializeApp(
   {
     credential: firebaseAdmin.credential.cert({
-      projectId: process.env.GCP_PROJECT_ID,
+      projectId: process.env.PROJECT_ID,
       clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: process.env.FIREBASE_PRIVATE_KEY
+      privateKey: (process.env.FIREBASE_PRIVATE_KEY || "").replace(/\\n/g, "\n")
     }),
     databaseURL: process.env.FIREBASE_DATABASE_URL
   },
@@ -525,7 +525,7 @@ export const verifyUserToken = async (token: string): Promise<User> => {
 
 Create .env file:
 ```
-GCP_PROJECT_ID=xxx
+PROJECT_ID=xxx
 FIREBASE_CLIENT_EMAIL=xxx
 FIREBASE_PRIVATE_KEY=xxx
 FIREBASE_DATABASE_URL=xxx
