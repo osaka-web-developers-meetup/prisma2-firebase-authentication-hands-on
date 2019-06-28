@@ -480,5 +480,104 @@ export const Mutation: MutationResolvers = {
     return community;
   }
 };
+```
 
+## Step3 Firebase Authentication
+
+Install firebase-admin:
+```
+$ npm install --save firebase-admin
+```
+
+Create firebase:
+```
+$ mkdir src/client && touch src/client/firebase.ts
+```
+
+Modify src/client/firebase.ts:
+```ts
+import firebaseAdmin from "firebase-admin";
+
+export interface User {
+  uid: String;
+  [key: string]: any;
+}
+
+const admin = firebaseAdmin.initializeApp(
+  {
+    credential: firebaseAdmin.credential.cert({
+      projectId: process.env.GCP_PROJECT_ID,
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+      privateKey: process.env.FIREBASE_PRIVATE_KEY
+    }),
+    databaseURL: process.env.FIREBASE_DATABASE_URL
+  },
+  "server"
+);
+
+export const verifyUserToken = async (token: string): Promise<User> => {
+  const user = await admin.auth().verifySessionCookie(token, true);
+
+  if (user.uid) return user;
+  throw new Error("Not authorized.");
+};
+```
+
+Create .env file:
+```
+GCP_PROJECT_ID=xxx
+FIREBASE_CLIENT_EMAIL=xxx
+FIREBASE_PRIVATE_KEY=xxx
+FIREBASE_DATABASE_URL=xxx
+```
+
+Modify src/context.ts:
+```diff
+import Photon from "@generated/photon";
++import { verifyUserToken, User } from "./client/firebase";
++import { ExpressContext } from "apollo-server-express/dist/ApolloServer";
+
+export interface Context {
+  photon: Photon;
++  user: User;
+}
+
+export const photon = new Photon();
+
++export const getUser = async (ctx: ExpressContext): Promise<User> => {
++  const Authorization = ctx.req.get("Authorization");
++
++  if (Authorization) {
++    const token = Authorization.replace("Bearer ", "");
++    return await verifyUserToken(token);
++  }
++  throw new Error("Not authorized.");
++};
+```
+
+Modify src/index.ts:
+```diff
+import { ApolloServer, gql } from "apollo-server";
+import { importSchema } from "graphql-import";
+import { resolvers } from "./resolvers";
++import { photon, getUser } from "./context";
+
+const typeDefs = gql(importSchema("src/schema.graphql"));
+
+const server = new ApolloServer({
+  typeDefs,
+  resolvers: resolvers as any,
+-  context: { photon }
++  context: async req => {
++    const user = await getUser(req);
++    return { photon, user };
++  }
+});
+
+const port = process.env.PORT || 4000;
+server.listen({ port }, () =>
+  console.log(
+    `🚀 Server ready at http://localhost:${port}${server.graphqlPath}`
+  )
+);
 ```

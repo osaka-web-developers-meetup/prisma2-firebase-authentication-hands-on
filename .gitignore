@@ -11,3 +11,6 @@ node_modules/
 
 # Prisma migrations for dev
 backend/prisma/migrations/dev
+
+.env
+!.env.sample

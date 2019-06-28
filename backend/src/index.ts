@@ -1,14 +1,17 @@
 import { ApolloServer, gql } from "apollo-server";
 import { importSchema } from "graphql-import";
 import { resolvers } from "./resolvers";
-import { photon } from "./context";
+import { photon, getUser } from "./context";
 
 const typeDefs = gql(importSchema("src/schema.graphql"));
 
 const server = new ApolloServer({
   typeDefs,
   resolvers: resolvers as any,
-  context: { photon }
+  context: async req => {
+    const user = await getUser(req);
+    return { photon, user };
+  }
 });
 
 const port = process.env.PORT || 4000;
