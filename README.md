@@ -24,7 +24,7 @@ Run node-dev container:
 $ ./bin/compose-run
 ```
 
-## Step1 Add Prisma2
+## Step1 Prisma2
 Make backend directory:
 ```
 $ mkdir backend
