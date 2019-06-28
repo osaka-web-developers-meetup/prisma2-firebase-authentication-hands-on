@@ -117,3 +117,248 @@ Run generators:
 ```
 $ npx prisma2 generate
 ```
+
+## Step2 GraphQL Server
+Install TypeScript:
+```
+$ npm install --save-dev typescript
+```
+
+Initialize TypeScript:
+```
+$ npx tsc --init
+```
+
+tsconfig.yml:
+```yml
+{
+  "compilerOptions": {
+    "target": "es5",
+    "module": "commonjs",
+    "lib": ["esnext","dom"],
+    "sourceMap": true,
+    "outDir": "./dist",
+    "removeComments": true,
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "moduleResolution": "node",
+    "esModuleInterop": true
+  },
+  "exclude": [
+    "node_modules",
+    "prisma"
+  ]
+}
+```
+
+Install Apollo Server:
+```
+$ npm install --save graphql apollo-server
+```
+
+Install Types:
+```
+$ npm install --save-dev @types/node @types/graphql
+```
+
+Install packages for Dev:
+```
+$ npm install --save-dev ts-node-dev dotenv @graphql-codegen/cli
+```
+
+Initialize GraphQL Code Generator:
+```
+$ npx graphql-codegen init
+$ npm install
+```
+
+Create schema.graphql:
+```
+$ mkdir src && touch src/schema.graphql
+```
+
+src/schema.graphql:
+```graphql
+scalar DateTime
+
+type Query {
+  communities: [Community!]!
+}
+
+type Community {
+  id: ID!
+  name: String!
+  description: String
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+```
+
+Generate resolver types:
+```
+$ npm run generate
+```
+
+Create Context:
+```
+$ touch src/context.ts
+```
+
+src/context.ts:
+```ts
+import Photon from "@generated/photon";
+
+export interface Context {
+  photon: Photon;
+}
+
+export const photon = new Photon()
+```
+
+Create Resolvers:
+```
+$ mkdir src/resolvers
+$ touch src/resolvers/index.ts src/resolvers/Query.ts
+```
+
+src/resolvers/Query.ts:
+```ts
+import { QueryResolvers } from "../generated/graphql";
+import { Context } from "../context";
+
+export const Query: QueryResolvers = {
+  communities: async (parent, args, ctx: Context) => {
+    return ctx.photon.communities.findMany();
+  }
+};
+```
+
+src/resolvers/index.ts:
+```ts
+import { Resolvers } from "../generated/graphql";
+import { Query } from "./Query";
+
+export const resolvers: Resolvers = {
+  Query
+};
+```
+
+Create GraphQL Server:
+```
+$ touch src/index.ts
+```
+
+Install graphql-import:
+```
+$ npm install --save graphql-import
+```
+
+src/index.ts:
+```ts
+import { ApolloServer, gql } from "apollo-server";
+import { importSchema } from "graphql-import";
+import { resolvers } from "./resolvers";
+import { photon } from "./context";
+
+const typeDefs = gql(importSchema("src/schema.graphql"));
+
+const server = new ApolloServer({
+  typeDefs,
+  resolvers: resolvers as any,
+  context: { photon }
+});
+
+const port = process.env.PORT || 4000;
+server.listen({ port }, () =>
+  console.log(
+    `🚀 Server ready at http://localhost:${port}${server.graphqlPath}`
+  )
+);
+```
+
+Add GraphQL Server start script:
+
+package.json
+```diff
+{
+  ...
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+-    "generate": "graphql-codegen --config codegen.yml"
++    "generate": "graphql-codegen --config codegen.yml",
++    "start": "ts-node-dev -r dotenv/config src/index.ts"
+  },
+  ...
+}
+```
+
+Add Mutation:
+```
+$ touch src/resolvers/Mutation.ts
+```
+
+Modify src/schema.graphql
+```diff
+scalar DateTime
+
+type Query {
+  communities: [Community!]!
+}
+
++type Mutation {
++  createCommunity(input: CreateCommunityInput!): Community!
++}
+
+type Community {
+  id: ID!
+  name: String!
+  description: String
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
++input CreateCommunityInput {
++  name: String!
++  description: String
++}
+```
+
+Run graphql generate:
+```
+$ npm run generate
+```
+
+Modify src/resolvers/Mutation.ts:
+```ts
+import { MutationResolvers } from "../generated/graphql";
+import { Context } from "../context";
+
+export const Mutation: MutationResolvers = {
+  createCommunity: async (parent, args, ctx: Context) => {
+    const { name, description } = args.input;
+    const community = await ctx.photon.communities.create({
+      data: {
+        name,
+        description: description || ""
+      }
+    });
+    return community;
+  }
+};
+```
+
+Modify src/resolvers/index.ts:
+```diff
+import { Resolvers } from "../generated/graphql";
+import { Query } from "./Query";
++import { Mutation } from "./Mutation";
+
+export const resolvers: Resolvers = {
+-  Query
++  Query,
++  Mutation
+};
+```
