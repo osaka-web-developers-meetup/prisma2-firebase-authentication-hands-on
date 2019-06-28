@@ -3,6 +3,7 @@ import {
   GraphQLScalarType,
   GraphQLScalarTypeConfig
 } from "graphql";
+import { Context } from "./src/context";
 export type Maybe<T> = T | null;
 export type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;
 /** All built-in and custom scalars, mapped to their actual values */
@@ -41,6 +42,11 @@ export type MutationCreateCommunityArgs = {
 export type Query = {
   __typename?: "Query";
   communities: Array<Community>;
+};
+
+export type Subscription = {
+  __typename?: "Subscription";
+  communityAdded: Array<Community>;
 };
 
 export type ResolverTypeWrapper<T> = Promise<T> | T;
@@ -121,6 +127,7 @@ export type ResolversTypes = {
   DateTime: ResolverTypeWrapper<Scalars["DateTime"]>;
   Mutation: ResolverTypeWrapper<{}>;
   CreateCommunityInput: CreateCommunityInput;
+  Subscription: ResolverTypeWrapper<{}>;
   Boolean: ResolverTypeWrapper<Scalars["Boolean"]>;
 };
 
@@ -133,11 +140,12 @@ export type ResolversParentTypes = {
   DateTime: Scalars["DateTime"];
   Mutation: {};
   CreateCommunityInput: CreateCommunityInput;
+  Subscription: {};
   Boolean: Scalars["Boolean"];
 };
 
 export type CommunityResolvers<
-  ContextType = any,
+  ContextType = Context,
   ParentType = ResolversParentTypes["Community"]
 > = {
   id?: Resolver<ResolversTypes["ID"], ParentType, ContextType>;
@@ -157,7 +165,7 @@ export interface DateTimeScalarConfig
 }
 
 export type MutationResolvers<
-  ContextType = any,
+  ContextType = Context,
   ParentType = ResolversParentTypes["Mutation"]
 > = {
   createCommunity?: Resolver<
@@ -169,7 +177,7 @@ export type MutationResolvers<
 };
 
 export type QueryResolvers<
-  ContextType = any,
+  ContextType = Context,
   ParentType = ResolversParentTypes["Query"]
 > = {
   communities?: Resolver<
@@ -179,15 +187,27 @@ export type QueryResolvers<
   >;
 };
 
-export type Resolvers<ContextType = any> = {
+export type SubscriptionResolvers<
+  ContextType = Context,
+  ParentType = ResolversParentTypes["Subscription"]
+> = {
+  communityAdded?: SubscriptionResolver<
+    Array<ResolversTypes["Community"]>,
+    ParentType,
+    ContextType
+  >;
+};
+
+export type Resolvers<ContextType = Context> = {
   Community?: CommunityResolvers<ContextType>;
   DateTime?: GraphQLScalarType;
   Mutation?: MutationResolvers<ContextType>;
   Query?: QueryResolvers<ContextType>;
+  Subscription?: SubscriptionResolvers<ContextType>;
 };
 
 /**
  * @deprecated
  * Use "Resolvers" root object instead. If you wish to get "IResolvers", add "typesPrefix: I" to your config.
  */
-export type IResolvers<ContextType = any> = Resolvers<ContextType>;
+export type IResolvers<ContextType = Context> = Resolvers<ContextType>;

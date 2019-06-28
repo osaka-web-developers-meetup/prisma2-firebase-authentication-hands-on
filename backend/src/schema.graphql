@@ -8,6 +8,10 @@ type Mutation {
   createCommunity(input: CreateCommunityInput!): Community!
 }
 
+type Subscription {
+  communityAdded: [Community!]!
+}
+
 type Community {
   id: ID!
   name: String!

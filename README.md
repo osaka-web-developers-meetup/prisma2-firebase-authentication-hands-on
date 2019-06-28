@@ -362,3 +362,123 @@ export const resolvers: Resolvers = {
 +  Mutation
 };
 ```
+
+Add Subscriptions:
+
+Install package:
+```
+$ npm install --save graphql-subscriptions
+```
+
+Create src/subscription.ts:
+```
+$ touch src/subscription.ts
+```
+
+Modify src/subscription.ts:
+```ts
+import { PubSub } from 'graphql-subscriptions';
+
+export const pubsub = new PubSub();
+```
+
+Modify GraphQL Schema:
+```diff
+scalar DateTime
+
+type Query {
+  communities: [Community!]!
+}
+
+type Mutation {
+  createCommunity(input: CreateCommunityInput!): Community!
+}
+
++type Subscription {
++  communityAdded: [Community!]!
++}
+
+type Community {
+  id: ID!
+  name: String!
+  description: String
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+input CreateCommunityInput {
+  name: String!
+  description: String
+}
+```
+
+Run graphql generate:
+```
+$ npm run generate
+```
+
+Create Subscription resolver:
+```
+$ touch src/resolvers/Subscription.ts
+```
+
+Create constant for Subscriptions:
+```
+$ touch src/constant/channels.ts
+```
+
+Modify src/constant/channels.ts:
+```ts
+export const COMMUNITY_ADDED = "COMMUNITY_ADDED";
+```
+
+Modify src/resolvers/Subscription.ts:
+```ts
+import { pubsub } from "../subscription";
+import { SubscriptionResolvers } from "../generated/graphql";
+import { COMMUNITY_ADDED } from "../constant/channels";
+
+export const Subscription: SubscriptionResolvers = {
+  communityAdded: {
+    subscribe: () => pubsub.asyncIterator(COMMUNITY_ADDED)
+  }
+};
+```
+
+Modify src/resolvers/index.ts:
+```diff
+import { Resolvers } from "../generated/graphql";
+import { Query } from "./Query";
+import { Mutation } from "./Mutation";
++import { Subscription } from "./Subscription";
+
+export const resolvers: Resolvers = {
+  Query,
+-  Mutation
++  Mutation,
++  Subscription
+};
+```
+
+Modify src/resolvers/Mutation.ts:
+```diff
++import { pubsub } from "../subscription";
+import { MutationResolvers } from "../generated/graphql";
++import { COMMUNITY_ADDED } from "../constant/channels";
+
+export const Mutation: MutationResolvers = {
+  createCommunity: async (parent, args, context) => {
+    const { name, description } = args.input;
+    const community = await context.photon.communities.create({
+      data: {
+        name,
+        description: description || ""
+      }
+    });
++    const communities = await context.photon.communities.findMany();
++    pubsub.publish(COMMUNITY_ADDED, { communityAdded: communities });
+    return community;
+  }
+};
+
+```

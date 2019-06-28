@@ -1,4 +1,6 @@
+import { pubsub } from "../subscription";
 import { MutationResolvers } from "../generated/graphql";
+import { COMMUNITY_ADDED } from "../constant/channels";
 
 export const Mutation: MutationResolvers = {
   createCommunity: async (parent, args, context) => {
@@ -9,6 +11,8 @@ export const Mutation: MutationResolvers = {
         description: description || ""
       }
     });
+    const communities = await context.photon.communities.findMany();
+    pubsub.publish(COMMUNITY_ADDED, { communityAdded: communities });
     return community;
   }
 };
