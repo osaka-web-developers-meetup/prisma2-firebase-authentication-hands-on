@@ -112,3 +112,8 @@ Run migrate:
 ```
 $ npx prisma2 lift up
 ```
+
+Run generators:
+```
+$ npx prisma2 generate
+```
