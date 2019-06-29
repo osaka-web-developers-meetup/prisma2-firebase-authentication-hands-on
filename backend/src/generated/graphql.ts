@@ -3,7 +3,7 @@ import {
   GraphQLScalarType,
   GraphQLScalarTypeConfig
 } from "graphql";
-import { Context } from "./src/context";
+import { Context } from "../context";
 export type Maybe<T> = T | null;
 export type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;
 /** All built-in and custom scalars, mapped to their actual values */

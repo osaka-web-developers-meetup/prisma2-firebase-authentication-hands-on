@@ -8,9 +8,27 @@ const typeDefs = gql(importSchema("src/schema.graphql"));
 const server = new ApolloServer({
   typeDefs,
   resolvers: resolvers as any,
-  context: async req => {
-    const user = await getUser(req);
+  context: async ({ req, connection }: any) => {
+    let authorization;
+
+    if (connection) {
+      authorization = connection.context.authToken;
+    } else {
+      authorization = req.get("Authorization");
+    }
+
+    const user = await getUser(authorization);
     return { photon, user };
+  },
+  subscriptions: {
+    onConnect: async (connectionParams: any, webSocket) => {
+      const headers = connectionParams && connectionParams.headers;
+      if (headers) {
+        return {
+          authToken: headers.Authorization
+        };
+      }
+    }
   }
 });
 

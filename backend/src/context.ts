@@ -1,6 +1,5 @@
 import Photon from "@generated/photon";
 import { verifyUserToken, User } from "./client/firebase";
-import { ExpressContext } from "apollo-server-express/dist/ApolloServer";
 
 export interface Context {
   photon: Photon;
@@ -9,12 +8,11 @@ export interface Context {
 
 export const photon = new Photon();
 
-export const getUser = async (ctx: ExpressContext): Promise<User> => {
-  const Authorization = ctx.req.get("Authorization");
-
-  if (Authorization) {
-    const token = Authorization.replace("Bearer ", "");
-    return await verifyUserToken(token);
+export const getUser = async (authorization?: string): Promise<User> => {
+  if (authorization) {
+    const token = authorization.replace("Bearer ", "");
+    const user = await verifyUserToken(token);
+    if (user) return user;
   }
   throw new Error("Not authorized.");
 };

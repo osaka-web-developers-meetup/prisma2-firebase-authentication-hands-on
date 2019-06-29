@@ -17,9 +17,7 @@ const admin = firebaseAdmin.initializeApp(
   "server"
 );
 
-export const verifyUserToken = async (token: string): Promise<User> => {
-  const user = await admin.auth().verifySessionCookie(token, true);
-
+export const verifyUserToken = async (token: string): Promise<User | void> => {
+  const user = await admin.auth().verifyIdToken(token, true);
   if (user.uid) return user;
-  throw new Error("Not authorized.");
 };

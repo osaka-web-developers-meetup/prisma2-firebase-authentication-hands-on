@@ -143,7 +143,6 @@ tsconfig.yml:
     "noImplicitAny": true,
     "strictNullChecks": true,
     "noUnusedLocals": true,
-    "noUnusedParameters": true,
     "moduleResolution": "node",
     "esModuleInterop": true
   },
@@ -173,6 +172,20 @@ Initialize GraphQL Code Generator:
 ```
 $ npx graphql-codegen init
 $ npm install
+```
+
+Modify src/codegen.yml:
+```diff
+overwrite: true
+schema: "src/schema.graphql"
+documents: null
+generates:
+  src/generated/graphql.ts:
++    config:
++      contextType: ../context#Context
+    plugins:
+      - "typescript"
+      - "typescript-resolvers"
 ```
 
 Create schema.graphql:
@@ -227,11 +240,10 @@ $ touch src/resolvers/index.ts src/resolvers/Query.ts
 src/resolvers/Query.ts:
 ```ts
 import { QueryResolvers } from "../generated/graphql";
-import { Context } from "../context";
 
 export const Query: QueryResolvers = {
-  communities: async (parent, args, ctx: Context) => {
-    return ctx.photon.communities.findMany();
+  communities: async (parent, args, context) => {
+    return context.photon.communities.findMany();
   }
 };
 ```
@@ -334,12 +346,11 @@ $ npm run generate
 Modify src/resolvers/Mutation.ts:
 ```ts
 import { MutationResolvers } from "../generated/graphql";
-import { Context } from "../context";
 
 export const Mutation: MutationResolvers = {
-  createCommunity: async (parent, args, ctx: Context) => {
+  createCommunity: async (parent, args, context) => {
     const { name, description } = args.input;
-    const community = await ctx.photon.communities.create({
+    const community = await context.photon.communities.create({
       data: {
         name,
         description: description || ""
@@ -515,11 +526,9 @@ const admin = firebaseAdmin.initializeApp(
   "server"
 );
 
-export const verifyUserToken = async (token: string): Promise<User> => {
-  const user = await admin.auth().verifySessionCookie(token, true);
-
+export const verifyUserToken = async (token: string): Promise<User | void> => {
+  const user = await admin.auth().verifyIdToken(token, true);
   if (user.uid) return user;
-  throw new Error("Not authorized.");
 };
 ```
 
@@ -535,7 +544,6 @@ Modify src/context.ts:
 ```diff
 import Photon from "@generated/photon";
 +import { verifyUserToken, User } from "./client/firebase";
-+import { ExpressContext } from "apollo-server-express/dist/ApolloServer";
 
 export interface Context {
   photon: Photon;
@@ -544,12 +552,11 @@ export interface Context {
 
 export const photon = new Photon();
 
-+export const getUser = async (ctx: ExpressContext): Promise<User> => {
-+  const Authorization = ctx.req.get("Authorization");
-+
-+  if (Authorization) {
-+    const token = Authorization.replace("Bearer ", "");
-+    return await verifyUserToken(token);
++export const getUser = async (authorization?: string): Promise<User> => {
++  if (authorization) {
++    const token = authorization.replace("Bearer ", "");
++    const user = await verifyUserToken(token);
++    if (user) return user;
 +  }
 +  throw new Error("Not authorized.");
 +};
@@ -568,9 +575,27 @@ const server = new ApolloServer({
   typeDefs,
   resolvers: resolvers as any,
 -  context: { photon }
-+  context: async req => {
-+    const user = await getUser(req);
++  context: async ({ req, connection }: any) => {
++    let authorization;
++
++    if (connection) {
++      authorization = connection.context.authToken;
++    } else {
++      authorization = req.get("Authorization");
++    }
++
++    const user = await getUser(authorization);
 +    return { photon, user };
++  },
++  subscriptions: {
++    onConnect: async (connectionParams: any, webSocket) => {
++      const headers = connectionParams && connectionParams.headers;
++      if (headers) {
++        return {
++          authToken: headers.Authorization
++        };
++      }
++    }
 +  }
 });
 
